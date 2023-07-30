@@ -1,33 +1,41 @@
-import requests
 import streamlit as st
+import requests
 
+def getAllBookstore() -> list:
+    url = "https://cloud.culture.tw/frontsite/trans/emapOpenDataAction.do?method=exportEmapJson&typeId=M"
+    headers = {"accept": "application/json"}
+    response = requests.get(url, headers=headers)
+    res = response.json()
+    return res
 
-def getAllBookstore():
-	url = 'https://cloud.culture.tw/frontsite/trans/emapOpenDataAction.do?method=exportEmapJson&typeId=M' # 在這裡輸入目標 url
-	headers = {"accept": "application/json"}
-	response = requests.get(url, headers=headers)
-	res = response.json()# 將 response 轉換成 json 格式
-	return res# 回傳值
-
-def getCountyOption(items):
-	optionList = []# 創建一個空的 List 並命名為 optionList
-	for item in items:
-		name = item['cityName'][0:3]
-        # 把 cityname 欄位中的縣市名稱擷取出來 並指定給變數 name
-		# hint: 想辦法處理 item['cityName'] 的內容
-		if name not in optionList:
+def getCountyOption(items) ->list:
+    optionList = []
+    for item in items:
+        name = item['cityName'][0:3]
+        if name not in optionList:
             optionList.append(name)
-        # 如果 name 不在 optionList 之中，便把它放入 optionList
-		# hint: 使用 if-else 來進行判斷 / 用 append 把東西放入 optionList
-	return optionList
+    return optionList
 
-def getSpecificBookstore(items, county):
+def getDistrictOption(items, target) ->list:
+    optionList = []
+    for item in items:
+        name = item['cityName']
+        if target not in name: continue
+        name.strip()
+        district = name[5:]
+        if len(district) == 0: continue
+        if district not in optionList:
+            optionList.append(district)
+    return optionList
+
+def getSpecificBookstore(items, county, districts):
     specificBookstoreList = []
     for item in items:
         name = item['cityName']
         if county not in name: continue
-        # 如果 name 不是我們選取的 county 則跳過
-        # hint: 用 if-else 判斷並用 continue 跳過
+        for district in districts:
+            if district not in name: continue
+            specificBookstoreList.append(item)
     return specificBookstoreList
 
 def getBookstoreInfo(items):
@@ -48,21 +56,24 @@ def getBookstoreInfo(items):
     return expanderList
 
 def app():
-	bookstoreList = getAllBookstore()# 呼叫 getAllBookstore 函式並將其賦值給變數 bookstoreList
-    
-    countyOption = getCountyOption(bookstoreList)# 呼叫 getCountyOption 並將回傳值賦值給變數 countyOption
-	
+    bookstoreList = getAllBookstore()
+
+    countyOption = getCountyOption(bookstoreList)
+
     st.header('特色書店地圖')
-	st.metric('Total bookstore', len(bookstoreList)) # 將 118 替換成書店的數量
-	county = st.selectbox('請選擇縣市', ['A', 'B', 'C'])
+    st.metric('Total bookstore', len(bookstoreList))
+    county = st.selectbox('請選擇縣市', countyOption)
     districtOption = getDistrictOption(bookstoreList, county)
-	district = st.multiselect('請選擇區域', ['a', 'b', 'c', 'd'])
-    
-    specificBookstore = getSpecificBookstore(bookstoreList, county, district)# 呼叫 getSpecificBookstore 並將回傳值賦值給變數 specificBookstore
-	num = len(specificBookstore)
-    st.write(f'總共有{num}項結果',num)
+    district = st.multiselect('請選擇區域', districtOption)
+
+    specificBookstore = getSpecificBookstore(bookstoreList, county, district)
+    num = len(specificBookstore)
+    st.write(f'總共有{num}項結果', num)
+
+    specificBookstore.sort(key = lambda item: item['hitRate'], reverse=True)
+    bookstoreInfo = getBookstoreInfo(specificBookstore)
 
 if __name__ == '__main__':
     app()
-
-
+  return go(f, seed, [])
+}
